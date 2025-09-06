@@ -16,6 +16,8 @@
             --text-muted: #9ca3af;
             --accent-purple: #b217e6;
             --accent-purple-hover: #9e15cc;
+            --accent-red: #ef4444;
+            --accent-red-hover: #dc2626;
         }
         .loader {
             border: 4px solid var(--border-color);
@@ -75,18 +77,34 @@
         
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-[var(--text-light)]">Asistente Didáctico IA</h1>
-            <p class="text-[var(--text-muted)] mt-2">Paso 1: Transcribe tu clase grabada.</p>
+            <p class="text-[var(--text-muted)] mt-2">Paso 1: Sube o graba el audio de tu clase.</p>
         </div>
 
         <div class="bg-[var(--bg-dark)] p-6 rounded-lg border border-[var(--border-color)]">
             <div id="upload-area" class="text-center">
-                <label for="audio-file" class="cursor-pointer inline-block bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-6 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                    Seleccionar Archivo de Audio (Máx 100MB)
-                </label>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <label for="audio-file" class="cursor-pointer inline-block bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-6 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md w-full sm:w-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                        Subir Archivo
+                    </label>
+                    <span class="text-[var(--text-muted)] font-medium">ó</span>
+                    <button id="record-btn" class="cursor-pointer inline-block bg-[var(--border-color)] text-[var(--text-light)] font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-all duration-300 shadow-md w-full sm:w-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z" /><path d="M5.5 4.5a2.5 2.5 0 015 0v6a2.5 2.5 0 01-5 0V4.5z" /><path d="M10 15a5 5 0 005-5h-1a4 4 0 01-8 0H5a5 5 0 005 5z" /></svg>
+                        Grabar Audio
+                    </button>
+                </div>
                 <input type="file" id="audio-file" class="hidden" accept="audio/*">
                 <p id="file-name" class="mt-4 text-[var(--text-muted)] font-medium"></p>
             </div>
+            
+            <div id="recording-controls" class="hidden text-center">
+                 <button id="stop-record-btn" class="cursor-pointer inline-block bg-[var(--accent-red)] text-[var(--text-light)] font-bold py-3 px-6 rounded-lg hover:bg-[var(--accent-red-hover)] transition-all duration-300 shadow-md">
+                    <svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6 inline-block mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm1 5a1 1 0 100 2h2a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
+                    Detener Grabación
+                </button>
+                <p id="timer" class="mt-4 text-2xl font-mono text-[var(--text-muted)]">00:00</p>
+            </div>
+
             <div class="mt-6 text-center">
                 <button id="transcribe-btn" class="bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-8 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Transcribir</button>
             </div>
@@ -152,6 +170,11 @@
         const transcriptionText = document.getElementById('transcription-text');
         const didacticToolsArea = document.getElementById('didactic-tools-area');
         const generateDocumentBtn = document.getElementById('generate-document-btn');
+        const uploadArea = document.getElementById('upload-area');
+        const recordingControls = document.getElementById('recording-controls');
+        const recordBtn = document.getElementById('record-btn');
+        const stopRecordBtn = document.getElementById('stop-record-btn');
+        const timerDisplay = document.getElementById('timer');
         
         const outputArea = document.getElementById('output-area');
         const generationSpinner = document.getElementById('generation-spinner');
@@ -167,9 +190,11 @@
         let audioBase64 = null;
         let audioMimeType = null;
         const FILE_SIZE_LIMIT_MB = 100;
+        let mediaRecorder;
+        let audioChunks = [];
+        let timerInterval;
 
         // --- FUNCIONES DE UTILIDAD Y API ---
-
         function showStatusMessage(message, type = 'error') {
             const color = type === 'error' ? 'text-red-500' : 'text-green-500';
             statusMessageArea.innerHTML = `<p class="${color} font-semibold">${message}</p>`;
@@ -266,7 +291,10 @@
         audioFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
-            
+            handleFile(file);
+        });
+
+        function handleFile(file) {
             if (file.size > FILE_SIZE_LIMIT_MB * 1024 * 1024) {
                 showStatusMessage(`El archivo es demasiado grande. El límite es ${FILE_SIZE_LIMIT_MB} MB.`, 'error');
                 audioFileInput.value = '';
@@ -277,11 +305,7 @@
             fileNameDisplay.textContent = `Archivo: ${audioFile.name}`;
             transcribeBtn.disabled = false;
             
-            resultArea.classList.add('hidden');
-            didacticToolsArea.classList.add('hidden');
-            outputArea.classList.add('hidden');
-            statusMessageArea.innerHTML = '';
-            transcriptionLoader.classList.add('hidden');
+            resetUIState();
 
             const reader = new FileReader();
             reader.readAsDataURL(audioFile);
@@ -291,13 +315,80 @@
                 audioMimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
             };
             reader.onerror = () => showStatusMessage('Error al procesar el archivo.', 'error');
+        }
+
+        function resetUIState() {
+             resultArea.classList.add('hidden');
+            didacticToolsArea.classList.add('hidden');
+            outputArea.classList.add('hidden');
+            statusMessageArea.innerHTML = '';
+            transcriptionLoader.classList.add('hidden');
+        }
+
+        // --- LÓGICA DE GRABACIÓN DE AUDIO ---
+        recordBtn.addEventListener('click', async () => {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showStatusMessage('La grabación de audio no es soportada en este navegador.', 'error');
+                return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                startRecording(stream);
+            } catch (err) {
+                showStatusMessage('Se necesita permiso para acceder al micrófono.', 'error');
+            }
         });
+
+        function startRecording(stream) {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            
+            mediaRecorder.addEventListener("dataavailable", event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener("stop", () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const recordedFile = new File([audioBlob], "grabacion.webm", { type: 'audio/webm' });
+                handleFile(recordedFile);
+
+                stream.getTracks().forEach(track => track.stop());
+            });
+            
+            mediaRecorder.start();
+            uploadArea.classList.add('hidden');
+            recordingControls.classList.remove('hidden');
+            startTimer();
+        }
+
+        stopRecordBtn.addEventListener('click', () => {
+            mediaRecorder.stop();
+            uploadArea.classList.remove('hidden');
+            recordingControls.classList.add('hidden');
+            stopTimer();
+        });
+
+        function startTimer() {
+            let seconds = 0;
+            timerDisplay.textContent = '00:00';
+            timerInterval = setInterval(() => {
+                seconds++;
+                const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `${minutes}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
 
         // --- LÓGICA DE TRANSCRIPCIÓN ---
         transcribeBtn.addEventListener('click', async () => {
             if (isApiKeyInvalid()) return;
             if (!audioBase64) {
-                showStatusMessage('Por favor, selecciona un archivo de audio válido.', 'error');
+                showStatusMessage('Por favor, selecciona o graba un archivo de audio válido.', 'error');
                 return;
             }
             
