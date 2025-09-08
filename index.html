@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convertidor de Audio a Texto y Asistente Didáctico</title>
+    <title>Asistente Didáctico IA para Audio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -32,81 +32,92 @@
             100% { transform: rotate(360deg); }
         }
         
-        #final-document-content {
-            background-color: #ffffff;
-            color: #111827;
-            border-color: #d1d5db;
+        [data-tooltip] { position: relative; }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--border-color);
+            color: var(--text-light);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+            z-index: 10;
         }
-        #final-document-content h3 {
-            font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem;
-        }
-        #final-document-content p {
-            margin-bottom: 1rem; line-height: 1.6;
-        }
-        #final-document-content ul, #final-document-content ol {
-            margin-left: 1.25rem; margin-bottom: 1rem;
-        }
-        #final-document-content li {
-            margin-bottom: 0.5rem;
-        }
-        #final-document-content ul {
-            list-style-type: disc;
-        }
+        [data-tooltip]:hover::after { opacity: 1; visibility: visible; }
+
+        #final-document-content { background-color: #ffffff; color: #111827; border-color: #d1d5db; }
+        #final-document-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
+        #final-document-content p { margin-bottom: 1rem; line-height: 1.6; }
+        #final-document-content ul, #final-document-content ol { margin-left: 1.25rem; margin-bottom: 1rem; }
+        #final-document-content li { margin-bottom: 0.5rem; }
+        #final-document-content ul { list-style-type: disc; }
         #final-document-content ol { list-style-type: decimal; }
-        #final-document-content pre {
-            background-color: #f3f4f6; border: 1px solid #e5e7eb; color: #1f2937; font-family: 'Courier New', Courier, monospace; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;
+        #final-document-content pre { background-color: #f3f4f6; border: 1px solid #e5e7eb; color: #1f2937; font-family: 'Courier New', Courier, monospace; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+
+        .print-only {
+            display: none;
         }
 
         @media print {
             body { background-color: #fff; }
             body * { visibility: hidden; }
-            #final-document-content, #final-document-content * {
-                visibility: visible;
-            }
-            #final-document-content {
-                position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 1.5rem; border: none;
-            }
-            .no-print {
-                display: none;
-            }
+            #final-document-content, #final-document-content * { visibility: visible; }
+            #final-document-content { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 1.5rem; border: none; }
+            .no-print { display: none; }
+            .print-only { display: flex; }
+            .print-only a { text-decoration: none; color: #4b5563; }
         }
     </style>
 </head>
 <body class="bg-[var(--bg-dark)] flex items-center justify-center min-h-screen py-10">
     <div id="main-card" class="bg-[var(--bg-card)] rounded-2xl shadow-xl p-8 max-w-4xl w-full m-4">
         
+        <div class="flex justify-end items-center gap-2 mb-4 no-print">
+            <span class="text-sm text-[var(--text-muted)]">diseñado por:</span>
+            <a href="https://paulflores.com.mx" target="_blank" rel="noopener noreferrer">
+                <img src="https://paulflores.com.mx/wp-content/uploads/2025/04/pflores-logo.png" alt="Logo Paul Flores" class="h-8">
+            </a>
+        </div>
+
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-[var(--text-light)]">Asistente Didáctico IA</h1>
-            <p class="text-[var(--text-muted)] mt-2">Paso 1: Sube o graba el audio de tu clase.</p>
+            <p class="text-[var(--text-muted)] mt-2">Paso 1: Sube o graba un audio de tu clase.</p>
         </div>
 
         <div class="bg-[var(--bg-dark)] p-6 rounded-lg border border-[var(--border-color)]">
             <div id="upload-area" class="text-center">
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <label for="audio-file" class="cursor-pointer inline-block bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-6 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md w-full sm:w-auto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                        Subir Archivo
+                    <label for="media-file" class="cursor-pointer inline-block bg-[var(--accent-purple)] text-[var(--text-light)] font-bold p-3 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md" data-tooltip="Subir Archivo de Audio" aria-label="Subir Archivo de Audio">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                     </label>
                     <span class="text-[var(--text-muted)] font-medium">ó</span>
-                    <button id="record-btn" class="cursor-pointer inline-block bg-[var(--border-color)] text-[var(--text-light)] font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-all duration-300 shadow-md w-full sm:w-auto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z" /><path d="M5.5 4.5a2.5 2.5 0 015 0v6a2.5 2.5 0 01-5 0V4.5z" /><path d="M10 15a5 5 0 005-5h-1a4 4 0 01-8 0H5a5 5 0 005 5z" /></svg>
-                        Grabar Audio
+                    <button id="record-btn" class="cursor-pointer inline-block bg-[var(--border-color)] text-[var(--text-light)] font-bold p-3 rounded-lg hover:bg-gray-600 transition-all duration-300 shadow-md" data-tooltip="Grabar Audio" aria-label="Grabar Audio">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm5 6a1 1 0 11-2 0V4a1 1 0 112 0v6zM10 15a5 5 0 005-5H5a5 5 0 005 5z" clip-rule="evenodd" /></svg>
                     </button>
                 </div>
-                <input type="file" id="audio-file" class="hidden" accept="audio/*">
-                <p id="file-name" class="mt-4 text-[var(--text-muted)] font-medium"></p>
+                <input type="file" id="media-file" class="hidden" accept="audio/*">
+                <p id="file-name" class="mt-4 text-[var(--text-muted)] font-medium h-5"></p>
             </div>
             
             <div id="recording-controls" class="hidden text-center">
-                 <button id="stop-record-btn" class="cursor-pointer inline-block bg-[var(--accent-red)] text-[var(--text-light)] font-bold py-3 px-6 rounded-lg hover:bg-[var(--accent-red-hover)] transition-all duration-300 shadow-md">
-                    <svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6 inline-block mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm1 5a1 1 0 100 2h2a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
-                    Detener Grabación
-                </button>
-                <p id="timer" class="mt-4 text-2xl font-mono text-[var(--text-muted)]">00:00</p>
+                 <button id="stop-record-btn" class="cursor-pointer inline-block bg-[var(--accent-red)] text-[var(--text-light)] font-bold p-3 rounded-lg hover:bg-[var(--accent-red-hover)] transition-all duration-300 shadow-md" data-tooltip="Detener Grabación" aria-label="Detener Grabación">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>
+                 </button>
+                 <p id="timer" class="mt-4 text-2xl font-mono text-[var(--text-muted)]">00:00</p>
             </div>
 
             <div class="mt-6 text-center">
-                <button id="transcribe-btn" class="bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-8 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Transcribir</button>
+                <button id="transcribe-btn" class="bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-8 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center mx-auto" disabled data-tooltip="Transcribir" aria-label="Transcribir">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <span class="sm:inline ml-2">Transcribir</span>
+                </button>
             </div>
             <div id="transcription-loader" class="hidden flex flex-col items-center justify-center p-6">
                 <div class="loader"></div>
@@ -116,52 +127,50 @@
         </div>
 
         <div id="result-area" class="hidden mt-8">
-            <h2 class="text-xl font-semibold text-[var(--text-light)] mb-4">Paso 2: Revisa y corrige la transcripción.</h2>
-            <div class="relative"><textarea id="transcription-text" class="w-full h-32 p-4 border border-[var(--border-color)] rounded-lg bg-[var(--bg-dark)] text-[var(--text-light)] focus:ring-2 focus:ring-[var(--accent-purple)] focus:border-[var(--accent-purple)]"></textarea></div>
+            <h2 class="text-xl font-semibold text-[var(--text-light)] mb-4">Paso 2: Revisa la transcripción.</h2>
+            <textarea id="transcription-text" class="w-full h-64 p-4 border border-[var(--border-color)] rounded-lg bg-[var(--bg-dark)] text-[var(--text-light)] focus:ring-2 focus:ring-[var(--accent-purple)] focus:border-[var(--accent-purple)]"></textarea>
         </div>
 
-        <div id="didactic-tools-area" class="hidden mt-8">
-             <h2 class="text-xl font-semibold text-[var(--text-light)] mb-4 text-center">Paso 3: Crea el material de estudio.</h2>
-             <div class="flex justify-center">
-                 <button id="generate-document-btn" class="bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-8 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md">
-                    Generar Documento de Estudio
-                </button>
-             </div>
+        <div id="didactic-tools-area" class="hidden mt-8 text-center">
+             <h2 class="text-xl font-semibold text-[var(--text-light)] mb-4">Paso 3: Crea el material.</h2>
+             <button id="generate-document-btn" class="bg-[var(--accent-purple)] text-[var(--text-light)] font-bold py-3 px-8 rounded-lg hover:bg-[var(--accent-purple-hover)] transition-all duration-300 shadow-md flex items-center justify-center mx-auto" data-tooltip="Generar Documento de Estudio" aria-label="Generar Documento de Estudio">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="sm:inline ml-2">Generar Documento</span>
+            </button>
         </div>
 
         <div id="output-area" class="hidden mt-8">
             <div id="document-container">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-[var(--text-light)]">Documento de Estudio</h2>
-                    <div class="flex space-x-2 no-print">
-                        <button id="print-pdf-btn" class="bg-[var(--border-color)] text-[var(--text-light)] font-semibold py-2 px-4 rounded-md hover:bg-gray-600 transition flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"></path></svg>
-                            Imprimir a PDF
+                <div class="flex justify-between items-center mb-4 no-print">
+                    <h2 class="text-2xl font-bold text-[var(--text-light)]">Documento Final</h2>
+                    <div class="flex space-x-2">
+                        <button id="print-pdf-btn" class="bg-[var(--border-color)] text-[var(--text-light)] font-semibold p-3 rounded-md hover:bg-gray-600 transition" data-tooltip="Imprimir a PDF" aria-label="Imprimir a PDF">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" /></svg>
                         </button>
-                        <button id="copy-document-btn" class="bg-[var(--border-color)] text-[var(--text-light)] font-semibold py-2 px-4 rounded-md hover:bg-gray-600 transition flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                            Copiar Todo
+                        <button id="copy-document-btn" class="bg-[var(--border-color)] text-[var(--text-light)] font-semibold p-3 rounded-md hover:bg-gray-600 transition" data-tooltip="Copiar Todo" aria-label="Copiar Todo">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                         </button>
                     </div>
                 </div>
                 <p id="copy-document-feedback" class="text-sm text-green-400 h-4 text-right"></p>
+                <div id="generation-spinner" class="hidden flex flex-col items-center justify-center p-10">
+                    <div class="loader"></div>
+                    <p class="mt-4 text-[var(--text-muted)]">Generando documento, esto puede tardar un momento...</p>
+                </div>
                 <div id="final-document-content" class="p-6 border rounded-lg"></div>
-            </div>
-            
-            <div id="generation-spinner" class="hidden flex flex-col items-center justify-center p-10">
-                <div class="loader"></div>
-                <p class="mt-4 text-[var(--text-muted)]">Generando documento, esto puede tardar un momento...</p>
             </div>
         </div>
     </div>
 
     <script>
     window.addEventListener('load', () => {
-        // --- CONFIGURACIÓN ---
-        const GOOGLE_API_KEY = "AIzaSyBO9K5nOq8X2QbJyDtJJPLXHskEtPdfbms";
+        // --- CONFIGURACIÓN DE DESARROLLO ---
+        // Para probar localmente, pega tu API key aquí.
+        // Para producción (Netlify), déjala vacía.
+        const DEV_CONFIG = { API_KEY: "" };
 
         // --- REFERENCIAS A ELEMENTOS DEL DOM ---
-        const audioFileInput = document.getElementById('audio-file');
+        const mediaFileInput = document.getElementById('media-file');
         const fileNameDisplay = document.getElementById('file-name');
         const transcribeBtn = document.getElementById('transcribe-btn');
         const transcriptionLoader = document.getElementById('transcription-loader');
@@ -175,10 +184,8 @@
         const recordBtn = document.getElementById('record-btn');
         const stopRecordBtn = document.getElementById('stop-record-btn');
         const timerDisplay = document.getElementById('timer');
-        
         const outputArea = document.getElementById('output-area');
         const generationSpinner = document.getElementById('generation-spinner');
-        
         const documentContainer = document.getElementById('document-container');
         const finalDocumentContent = document.getElementById('final-document-content');
         const copyDocumentBtn = document.getElementById('copy-document-btn');
@@ -186,7 +193,6 @@
         const printPdfBtn = document.getElementById('print-pdf-btn');
 
         // --- ESTADO DE LA APLICACIÓN ---
-        let audioFile = null;
         let audioBase64 = null;
         let audioMimeType = null;
         const FILE_SIZE_LIMIT_MB = 100;
@@ -200,55 +206,76 @@
             statusMessageArea.innerHTML = `<p class="${color} font-semibold">${message}</p>`;
         }
 
-        function setUiLoading(isLoading, type) {
+        function setUiLoading(isLoading, type, message = '') {
+            const btn = type === 'transcribe' ? transcribeBtn : generateDocumentBtn;
+            if (btn) btn.disabled = isLoading;
+
             if (type === 'transcribe') {
-                transcribeBtn.disabled = isLoading;
                 transcriptionLoader.classList.toggle('hidden', !isLoading);
-                if(isLoading) {
-                    statusMessageArea.innerHTML = '';
+                if(transcriptionLoader.querySelector('p')) transcriptionLoader.querySelector('p').textContent = message;
+            } else if (type === 'generate') {
+                generationSpinner.classList.toggle('hidden', !isLoading);
+                finalDocumentContent.classList.toggle('hidden', isLoading);
+            }
+
+            if (isLoading) {
+                statusMessageArea.innerHTML = '';
+                if(type === 'transcribe'){
                     resultArea.classList.add('hidden');
                     didacticToolsArea.classList.add('hidden');
                     outputArea.classList.add('hidden');
                 }
-            } else if (type === 'generate') {
-                generateDocumentBtn.disabled = isLoading;
-                generationSpinner.classList.toggle('hidden', !isLoading);
-                if(isLoading) {
-                    outputArea.classList.remove('hidden');
-                    documentContainer.classList.add('hidden');
-                }
             }
-        }
-
-        function isApiKeyInvalid() {
-            if (GOOGLE_API_KEY === "SU_API_KEY_VA_AQUI" || GOOGLE_API_KEY === "") {
-                showStatusMessage("Error de configuración: Por favor, introduce tu clave de API de Google en el código.", 'error');
-                return true;
-            }
-            return false;
         }
         
-        async function callGeminiAPI(prompt, inlineData = null) {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GOOGLE_API_KEY}`;
+        async function callGenerativeAPI(prompt, inlineData = null) {
+            const isProduction = window.location.hostname.includes('netlify.app');
+            let apiKey = '';
+            if (isProduction) {
+                // En producción, la clave se maneja en el backend.
+            } else {
+                apiKey = DEV_CONFIG.API_KEY;
+                if (!apiKey) {
+                    throw new Error("Clave de API no encontrada. Pégala en DEV_CONFIG para probar.");
+                }
+            }
+
+            const apiUrl = isProduction 
+                ? `/.netlify/functions/gemini`
+                : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
             const parts = [{ text: prompt }];
-            if (inlineData) parts.push({ inlineData });
-            const payload = { contents: [{ parts }] };
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (inlineData) parts.push({ inlineData: inlineData });
+
+            const payload = isProduction
+                ? { prompt, inlineData }
+                : { contents: [{ parts: parts }] };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMessage = isProduction ? (errorData.error || `Error en el servidor: ${response.status}`) : (errorData.error?.message || `Error en la API: ${response.status}`);
+                throw new Error(errorMessage);
+            }
+
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error?.message || `Error en la API: ${response.status}`);
-            return result.candidates?.[0]?.content?.parts?.[0]?.text;
+            return isProduction ? result.text : result.candidates?.[0]?.content?.parts?.[0]?.text;
         }
+
 
         function formatMarkdownToHtml(text) {
              const lines = text.split('\n');
             let html = '';
             let inUnorderedList = false, inOrderedList = false, inCodeBlock = false;
-            
             function closeOpenLists() {
                 if (inUnorderedList) { html += '</ul>'; inUnorderedList = false; }
                 if (inOrderedList) { html += '</ol>'; inOrderedList = false; }
             }
-
             lines.forEach(line => {
                 const trimmedLine = line.trim();
                 if (trimmedLine.startsWith('```')) {
@@ -277,57 +304,64 @@
                     html += `<p>${trimmedLine}</p>`;
                 }
             });
-
             closeOpenLists();
             if (inCodeBlock) html += '</pre>';
-            html = html.replace(/<pre>\s*<\/pre>/g, '');
-            html = html.replace(/<\/ul>\s*<ul>/g, '');
-            html = html.replace(/<\/ol>\s*<ol>/g, '');
             return html;
         }
 
+        // --- MANEJO DE ARCHIVOS DE AUDIO ---
+        mediaFileInput.addEventListener('change', (event) => handleFile(event.target.files[0]));
 
-        // --- MANEJO DE LA SELECCIÓN DE ARCHIVO ---
-        audioFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
+        async function handleFile(file) {
             if (!file) return;
-            handleFile(file);
-        });
+            resetUIState();
+            await processAudioFile(file);
+        }
 
-        function handleFile(file) {
-            if (file.size > FILE_SIZE_LIMIT_MB * 1024 * 1024) {
-                showStatusMessage(`El archivo es demasiado grande. El límite es ${FILE_SIZE_LIMIT_MB} MB.`, 'error');
-                audioFileInput.value = '';
+        async function processAudioFile(file) {
+            if (!file.type.startsWith('audio/')) {
+                showStatusMessage('Formato de archivo no soportado. Por favor, sube un archivo de audio.', 'error');
+                resetUIState();
                 return;
             }
 
-            audioFile = file;
-            fileNameDisplay.textContent = `Archivo: ${audioFile.name}`;
-            transcribeBtn.disabled = false;
+            if (file.size > FILE_SIZE_LIMIT_MB * 1024 * 1024) {
+                showStatusMessage(`El archivo es demasiado grande. El límite es ${FILE_SIZE_LIMIT_MB} MB.`, 'error');
+                return;
+            }
+            fileNameDisplay.textContent = `Archivo: ${file.name}`;
             
-            resetUIState();
-
-            const reader = new FileReader();
-            reader.readAsDataURL(audioFile);
-            reader.onload = () => {
-                const dataUrl = reader.result;
-                audioBase64 = dataUrl.split(',')[1];
-                audioMimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
-            };
-            reader.onerror = () => showStatusMessage('Error al procesar el archivo.', 'error');
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const dataUrl = reader.result;
+                    audioBase64 = dataUrl.split(',')[1];
+                    audioMimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+                    transcribeBtn.disabled = false;
+                    resolve();
+                };
+                reader.onerror = (error) => {
+                    showStatusMessage('Error al procesar el archivo de audio.', 'error');
+                    reject(error);
+                };
+            });
         }
 
         function resetUIState() {
-             resultArea.classList.add('hidden');
+            resultArea.classList.add('hidden');
             didacticToolsArea.classList.add('hidden');
             outputArea.classList.add('hidden');
             statusMessageArea.innerHTML = '';
             transcriptionLoader.classList.add('hidden');
+            fileNameDisplay.textContent = '';
+            transcribeBtn.disabled = true;
+            mediaFileInput.value = '';
         }
 
         // --- LÓGICA DE GRABACIÓN DE AUDIO ---
         recordBtn.addEventListener('click', async () => {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            if (!navigator.mediaDevices?.getUserMedia) {
                 showStatusMessage('La grabación de audio no es soportada en este navegador.', 'error');
                 return;
             }
@@ -342,20 +376,12 @@
         function startRecording(stream) {
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
-            
-            mediaRecorder.addEventListener("dataavailable", event => {
-                audioChunks.push(event.data);
-            });
-
+            mediaRecorder.addEventListener("dataavailable", event => audioChunks.push(event.data));
             mediaRecorder.addEventListener("stop", () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const recordedFile = new File([audioBlob], "grabacion.webm", { type: 'audio/webm' });
-                handleFile(recordedFile);
-
+                handleFile(new File([audioBlob], "grabacion.webm", { type: 'audio/webm' }));
                 stream.getTracks().forEach(track => track.stop());
             });
-            
             mediaRecorder.start();
             uploadArea.classList.add('hidden');
             recordingControls.classList.remove('hidden');
@@ -379,24 +405,18 @@
                 timerDisplay.textContent = `${minutes}:${secs}`;
             }, 1000);
         }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-        }
+        function stopTimer() { clearInterval(timerInterval); }
 
         // --- LÓGICA DE TRANSCRIPCIÓN ---
         transcribeBtn.addEventListener('click', async () => {
-            if (isApiKeyInvalid()) return;
             if (!audioBase64) {
                 showStatusMessage('Por favor, selecciona o graba un archivo de audio válido.', 'error');
                 return;
             }
-            
-            setUiLoading(true, 'transcribe');
+            setUiLoading(true, 'transcribe', 'Transcribiendo...');
             try {
                 const transcriptionPrompt = "Transcribe el siguiente audio. Devuelve únicamente el texto de la transcripción, sin incluir ninguna marca de tiempo (timestamps) o información adicional, solo el texto puro.";
-                const transcription = await callGeminiAPI(transcriptionPrompt, { mimeType: audioMimeType, data: audioBase64 });
-
+                const transcription = await callGenerativeAPI(transcriptionPrompt, { mimeType: audioMimeType, data: audioBase64 });
                 if (transcription) {
                     transcriptionText.value = transcription;
                     resultArea.classList.remove('hidden');
@@ -413,39 +433,25 @@
 
         // --- LÓGICA DE GENERACIÓN DE DOCUMENTO ---
         generateDocumentBtn.addEventListener('click', async () => {
-            if (isApiKeyInvalid()) return;
-            setUiLoading(true, 'generate');
-            
-            const masterPrompt = `
-                A partir de la siguiente transcripción de una clase de arquitectura, genera un documento de estudio completo y bien estructurado. El documento debe seguir ESTRICTAMENTE el siguiente formato y orden, usando los encabezados de Markdown indicados. No incluyas ninguna introducción, saludo o párrafo de presentación. Comienza directamente con el primer encabezado.
-                ## Documento de Estudio
-                Re-escribe la transcripción completa como un texto fluido y coherente. Elimina todas las muletillas (ej. "este", "bueno", "eh"), repeticiones, interrupciones y frases incompletas para que el texto se lea como un artículo bien redactado.
-                ## Mapa Mental
-                Crea un mapa mental en formato de diagrama de texto (ASCII art). Usa líneas como '├──', '└──', y '│' para mostrar la estructura jerárquica. Envuelve TODO el mapa mental dentro de un bloque de código de texto (\`\`\`text).
-                ## Resumen Ejecutivo
-                Crea un resumen conciso de la clase en un solo párrafo.
-                ## Puntos Clave
-                Extrae los 5 conceptos o ideas más importantes y preséntalos en una lista con viñetas (*).
-                ## Glosario de Términos
-                Identifica un máximo de 5 términos técnicos o conceptos clave de arquitectura mencionados en el texto. Para cada término, provee una definición clara y concisa en una lista de viñetas. Formato: * **Término:** Definición.
-                ## Conclusión
-                Elabora un párrafo de conclusión que sintetice los temas tratados.
-                ## Preguntas de Repaso
-                Crea 3 preguntas de repaso diseñadas para evaluar la comprensión del tema. Preséntalas en una lista numerada.
-                --- TRANSCRIPCIÓN ---
-                ${transcriptionText.value}
-            `;
-            
+            outputArea.classList.remove('hidden');
+            setUiLoading(true, 'generate', 'Generando documento...');
+            const masterPrompt = `A partir de la siguiente transcripción de una clase de arquitectura, genera un documento de estudio completo y bien estructurado. El documento debe seguir ESTRICTAMENTE el siguiente formato y orden, usando los encabezados de Markdown indicados. No incluyas ninguna introducción, saludo o párrafo de presentación. Comienza directamente con el primer encabezado. ## Documento de Estudio\nRe-escribe la transcripción completa como un texto fluido y coherente. Elimina todas las muletillas (ej. "este", "bueno", "eh"), repeticiones, interrupciones y frases incompletas para que el texto se lea como un artículo bien redactado.\n## Mapa Mental\nCrea un mapa mental en formato de diagrama de texto (ASCII art). Usa líneas como '├──', '└──', y '│' para mostrar la estructura jerárqu-ica. Envuelve TODO el mapa mental dentro de un bloque de código de texto (\`\`\`text).\n## Resumen Ejecutivo\nCrea un resumen conciso de la clase en un solo párrafo.\n## Puntos Clave\nExtrae los 5 conceptos o ideas más importantes y preséntalos en una lista con viñetas (*).\n## Glosario de Términos\nIdentifica un máximo de 5 términos técnicos o conceptos clave de arquitectura mencionados en el texto. Para cada término, provee una definición clara y concisa en una lista de viñetas. Formato: * **Término:** Definición.\n## Conclusión\nElabora un párrafo de conclusión que sintetice los temas tratados.\n## Preguntas de Repaso\nCrea 3 preguntas de repaso diseñadas para evaluar la comprensión del tema. Preséntalas en una lista numerada.\n--- TRANSCRIPCIÓN ---\n${transcriptionText.value}`;
             try {
-                const fullDocument = await callGeminiAPI(masterPrompt);
+                const fullDocument = await callGenerativeAPI(masterPrompt);
                 if (fullDocument) {
-                    finalDocumentContent.innerHTML = formatMarkdownToHtml(fullDocument);
-                    documentContainer.classList.remove('hidden');
+                    const printableHeader = `
+                        <div class="print-only flex justify-end items-center mb-6">
+                            <a href="[https://paulflores.com.mx](https://paulflores.com.mx)" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-600">
+                                diseñado por: paulflores.com.mx
+                            </a>
+                        </div>`;
+                    finalDocumentContent.innerHTML = printableHeader + formatMarkdownToHtml(fullDocument);
                 } else {
                     throw new Error("La API no devolvió contenido.");
                 }
             } catch (error) {
                 showStatusMessage(`Error al generar documento: ${error.message}`, 'error');
+                outputArea.classList.add('hidden');
             } finally {
                 setUiLoading(false, 'generate');
             }
@@ -454,13 +460,26 @@
         // --- EVENT LISTENERS PARA BOTONES DE ACCIÓN ---
         copyDocumentBtn.addEventListener('click', () => {
              const tempContainer = document.createElement('div');
+             const contentToCopy = finalDocumentContent.cloneNode(true);
+             const headerToRemove = contentToCopy.querySelector('.print-only');
+             if(headerToRemove) {
+                headerToRemove.remove();
+             }
+             
+             // Forzar estilos para asegurar fondo blanco y texto negro al pegar
              tempContainer.style.position = 'absolute';
              tempContainer.style.left = '-9999px';
-             const contentToCopy = finalDocumentContent.cloneNode(true);
-             contentToCopy.style.color = 'black';
-             contentToCopy.querySelectorAll('*').forEach(el => el.style.color = 'black');
+             tempContainer.style.backgroundColor = 'white';
+             tempContainer.style.color = 'black';
+             
+             contentToCopy.querySelectorAll('*').forEach(el => {
+                el.style.backgroundColor = 'white';
+                el.style.color = 'black';
+             });
+
              tempContainer.appendChild(contentToCopy);
              document.body.appendChild(tempContainer);
+
              const range = document.createRange();
              range.selectNode(tempContainer);
              window.getSelection().removeAllRanges();
@@ -476,9 +495,7 @@
              setTimeout(() => { copyDocumentFeedback.textContent = ''; }, 2000);
         });
 
-        printPdfBtn.addEventListener('click', () => { 
-            window.print();
-        });
+        printPdfBtn.addEventListener('click', () => { window.print(); });
     });
     </script>
 </body>
