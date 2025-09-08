@@ -230,41 +230,56 @@
         
         async function callGenerativeAPI(prompt, inlineData = null) {
             const isProduction = window.location.hostname.includes('netlify.app');
-            let apiKey = '';
+
+            // --- Bloque de Producción (Netlify) ---
             if (isProduction) {
-                // En producción, la clave se maneja en el backend.
-            } else {
-                apiKey = DEV_CONFIG.API_KEY;
+                const apiUrl = `/.netlify/functions/gemini`;
+                const payload = { prompt, inlineData };
+                const response = await fetch(apiUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    throw new Error(`El servidor devolvió una respuesta inesperada. Código: ${response.status}`);
+                }
+
+                if (!response.ok) {
+                    throw new Error(result.error || `Error en el servidor: ${response.status}`);
+                }
+                
+                return result.text;
+            } 
+            
+            // --- Bloque de Desarrollo (Local) ---
+            else {
+                const apiKey = DEV_CONFIG.API_KEY;
                 if (!apiKey) {
                     throw new Error("Clave de API no encontrada. Pégala en DEV_CONFIG para probar.");
                 }
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const parts = [{ text: prompt }];
+                if (inlineData) parts.push({ inlineData: inlineData });
+                const payload = { contents: [{ parts: parts }] };
+                
+                const response = await fetch(apiUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error?.message || `Error en la API de Google: ${response.status}`);
+                }
+                
+                return result.candidates?.[0]?.content?.parts?.[0]?.text;
             }
-
-            const apiUrl = isProduction 
-                ? `/.netlify/functions/gemini`
-                : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            const parts = [{ text: prompt }];
-            if (inlineData) parts.push({ inlineData: inlineData });
-
-            const payload = isProduction
-                ? { prompt, inlineData }
-                : { contents: [{ parts: parts }] };
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = isProduction ? (errorData.error || `Error en el servidor: ${response.status}`) : (errorData.error?.message || `Error en la API: ${response.status}`);
-                throw new Error(errorMessage);
-            }
-
-            const result = await response.json();
-            return isProduction ? result.text : result.candidates?.[0]?.content?.parts?.[0]?.text;
         }
 
 
