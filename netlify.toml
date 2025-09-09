@@ -1,3 +1,4 @@
 [functions]
-  directory = "netlify/function"
+  directory = "netlify/functions"
+
 
